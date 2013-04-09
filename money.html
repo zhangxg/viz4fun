@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+		<title>A simple treemap</title>
+
+		<script type="text/javascript" src="./d3.v3.js"></script>
+
+		<style type="text/css">
+			body {
+				overflow: hidden;
+				margin: 0;
+				font-size: 12px;
+				font-family: "Helvetica Neue", Helvetica;
+			}
+
+			#chart, #header, #footer {
+				position: absolute;
+				top: 0;
+			}
+
+			#header, #footer {
+				z-index: 1;
+				display: block;
+				font-size: 36px;
+				font-weight: 300;
+				text-shadow: 0 1px 0 #fff;
+			}
+
+			#header.inverted, #footer.inverted {
+				color: #fff;
+				text-shadow: 0 1px 4px #000;
+			}
+
+			#header {
+				top: 80px;
+				left: 140px;
+				width: 1200px;
+			}
+
+			#footer {
+				top: 680px;
+				right: 140px;
+				text-align: right;
+			}
+
+			rect {
+				pointer-events: all;
+				cursor: pointer;
+			}
+
+			.chart {
+				display: block;
+				margin: auto;
+				margin-top: 40px;
+			}
+
+			.parent .label {
+				color: #FFFFFF;
+				padding-left: 2px;
+				padding-top: 2px;
+				text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+				-webkit-text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+				-moz-text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+			}
+
+			.labelbody {
+				background: transparent;
+			}
+
+			.label {
+				padding: 2px;
+				white-space: pre;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+				-webkit-text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+				-moz-text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+			}
+
+			.child .label {
+				white-space: pre-wrap;
+				text-align: center;
+				text-overflow: ellipsis;
+			}
+
+			.cell {
+				font-size: 11px;
+				cursor: pointer
+			}
+		</style>
+	</head>
+	<body></body>
+
+	<script type="text/javascript">
+		var margin = {
+			top : 20,
+			right : 10,
+			bottom : 10,
+			left : 80
+		};
+		var chartWidth = 780 - 80;
+		var chartHeight = 800 - 180;
+		var xscale = d3.scale.linear().range([0, chartWidth]);
+		var yscale = d3.scale.linear().range([0, chartHeight]);
+		// var color = d3.scale.category10_ext();
+		var color = d3.scale.linear().domain([200, 10500]).range(["#7f9e07", "#c4181e"]);
+		var headerHeight = 20;
+		var headerColor = "#555555";
+		var transitionDuration = 500;
+		var root;
+		var node;
+
+		var jsonString = '{ "name": "flare", "children": [ { "name": "data", "children": [ { "name": "converters", "children": [ {"name": "Converters", "size": 721}, {"name": "DelimitedTextConverter", "size": 4294}, {"name": "GraphMLConverter", "size": 9800}, {"name": "IDataConverter", "size": 1314}, {"name": "JSONConverter", "size": 2220} ] }, {"name": "DataField", "size": 1759}, {"name": "DataSchema", "size": 2165}, {"name": "DataSet", "size": 586}, {"name": "DataSource", "size": 3331}, {"name": "DataTable", "size": 772}, {"name": "DataUtil", "size": 3322} ] }, { "name": "flex", "children": [ {"name": "FlareVis", "size": 4116} ] }, { "name": "physics", "children": [ {"name": "DragForce", "size": 1082}, {"name": "GravityForce", "size": 1336}, {"name": "IForce", "size": 319}, {"name": "NBodyForce", "size": 10498}, {"name": "Particle", "size": 2822}, {"name": "Simulation", "size": 9983}, {"name": "Spring", "size": 2213}, {"name": "SpringForce", "size": 1681} ] } ] }'
+
+		var treemap = d3.layout.treemap().round(false).size([chartWidth, chartHeight]).sticky(true).padding([headerHeight + 1, 1, 1, 1]).value(function(d) {
+			return d.size;
+		});
+		//
+		var chart = d3.select("body").append("div").style("position", "relative").style("left", margin.left + "px").style("top", margin.top + "px").append("svg:svg").attr("width", chartWidth).attr("height", chartHeight);
+
+		node = root = d3.json.parseFromText(jsonString);
+		var nodes = treemap.nodes(root);
+
+		var children = nodes.filter(function(d) {
+			return !d.children;
+		});
+		var parents = nodes.filter(function(d) {
+			return d.children && d != root;
+		});
+
+		// create parent cells
+		var parentCells = chart.selectAll("svg").data(parents, function(d) {
+			return "p-" + d.name;
+		});
+
+		var parentEnterTransition = parentCells.enter().append("g").attr("class", "cell parent").on("click", function(d) {
+			zoom(d);
+		});
+
+		parentEnterTransition.append("rect").attr("width", function(d) {
+			return Math.max(0.01, d.dx - 1);
+		}).attr("height", headerHeight).style("fill", headerColor);
+
+		parentEnterTransition.append('text').attr("class", "label").style("fill", "white");
+
+		parentEnterTransition.select("rect").attr("width", function(d) {
+			return Math.max(0.01, d.dx - 1);
+		}).attr("height", headerHeight).style("fill", headerColor);
+
+		parentEnterTransition.select("text").attr("dx", function(d) {
+			return Math.max(0.01, d.dx / 2 - 1);
+		}).attr("dy", headerHeight - 5).style("fill", "white").text(function(d) {
+			return d.name;
+		});
+		// remove transition
+		parentCells.exit().remove();
+
+		// create children cells
+		var childrenCells = chart.selectAll("svg").data(children, function(d) {
+			return "c-" + d.name;
+		});
+		// enter transition
+		var childEnterTransition = childrenCells.enter().append("g").attr("class", "cell child").on("click", function(d) {
+			zoom(node === d.parent ? root : d.parent);
+		});
+		childEnterTransition.append("rect").classed("background", true).style("fill", function(d) {
+			return color(d.value);
+
+		});
+		childEnterTransition.append('text').attr("class", "labelbody").attr("dx", function(d) {
+			return Math.max(0.01, d.dx / 2 - 1);
+		}).attr("dy", function(d) {
+			return Math.max(0.01, d.dy / 2 - 1);
+		}).text(function(d) {
+			return d.name + "(" + d.value + ")" + "-" + color(d.value);
+		});
+
+		childEnterTransition.select("rect").attr("width", function(d) {
+			return Math.max(0.01, d.dx - 1);
+		}).attr("height", function(d) {
+			return (d.dy - 1);
+		}).style("fill", function(d) {
+			return color(d.value);
+
+		});
+		childEnterTransition.select("text").attr("dx", function(d) {
+			return Math.max(0.01, d.dx / 2 - 1);
+		}).attr("dy", function(d) {
+			return Math.max(0.01, d.dy / 2 - 1);
+		}).text(function(d) {
+			return d.name + "(" + d.value + ")" + "-" + color(d.value);
+		});
+		// exit transition
+		childrenCells.exit().remove();
+
+		zoom(node);
+
+		//and another one
+		function textHeight(d) {
+			var ky = chartHeight / d.dy;
+			yscale.domain([d.y, d.y + d.dy]);
+			return (ky * d.dy) / headerHeight;
+		}
+
+		function zoom(d) {
+			this.treemap.padding([headerHeight / (chartHeight / d.dy), 0, 0, 0]).nodes(d);
+
+			var kx = chartWidth / d.dx;
+			var ky = chartHeight / d.dy;
+			var level = d;
+
+			xscale.domain([d.x, d.x + d.dx]);
+			yscale.domain([d.y, d.y + d.dy]);
+
+			if (node != level) {
+				chart.selectAll(".cell.child .foreignObject").style("display", "none");
+			}
+
+			var zoomTransition = chart.selectAll("g.cell").transition().duration(transitionDuration).attr("transform", function(d) {
+				return "translate(" + xscale(d.x) + "," + yscale(d.y) + ")";
+			}).each("start", function() {
+				d3.select(this).select(".labelbody").style("display", "none");
+			}).each("end", function(d) {
+				if (/*!i &&*/(level !== self.root)) {
+					chart.selectAll(".cell.child").filter(function(d) {
+						return d.parent === self.node;
+						// only get the children for selected group
+					}).select("text").style("display", "").style("color", function(d) {
+						// return idealTextColor(color(d.parent.name));
+						return color(d.value);
+					});
+				}
+			});
+
+			zoomTransition.select("text").attr("dx", function(d) {
+				return Math.max(0.01, kx * d.dx / 2 - 1);
+			}).attr("dy", function(d) {
+				return d.children ? headerHeight - 5 : Math.max(0.01, ky * d.dy / 2 - 1);
+			}).text(function(d) {
+				if (d.children) {
+					return d.name;
+				} else {
+					return d.name + "(" + d.value + ")" + "-" + color(d.value);
+				}
+			});
+
+			// update the width/height of the rects
+			zoomTransition.select("rect").attr("width", function(d) {
+				return Math.max(0.01, kx * d.dx - 1);
+			}).attr("height", function(d) {
+				return d.children ? headerHeight : Math.max(0.01, ky * d.dy - 1);
+			}).style("fill", function(d) {
+				return d.children ? headerColor : color(d.value);
+			});
+
+			node = d;
+
+			if (d3.event) {
+				d3.event.stopPropagation();
+			}
+		}
+
+	</script>
+
+</html>
