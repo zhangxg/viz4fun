@@ -90,7 +90,9 @@
 			}
 		</style>
 	</head>
-	<body></body>
+	<body>
+		
+	</body>
 
 	<script type="text/javascript">
 		var margin = {
@@ -113,7 +115,7 @@
 
 		var jsonString = '{ "name": "flare", "children": [ { "name": "data", "children": [ { "name": "converters", "children": [ {"name": "Converters", "size": 721}, {"name": "DelimitedTextConverter", "size": 4294}, {"name": "GraphMLConverter", "size": 9800}, {"name": "IDataConverter", "size": 1314}, {"name": "JSONConverter", "size": 2220} ] }, {"name": "DataField", "size": 1759}, {"name": "DataSchema", "size": 2165}, {"name": "DataSet", "size": 586}, {"name": "DataSource", "size": 3331}, {"name": "DataTable", "size": 772}, {"name": "DataUtil", "size": 3322} ] }, { "name": "flex", "children": [ {"name": "FlareVis", "size": 4116} ] }, { "name": "physics", "children": [ {"name": "DragForce", "size": 1082}, {"name": "GravityForce", "size": 1336}, {"name": "IForce", "size": 319}, {"name": "NBodyForce", "size": 10498}, {"name": "Particle", "size": 2822}, {"name": "Simulation", "size": 9983}, {"name": "Spring", "size": 2213}, {"name": "SpringForce", "size": 1681} ] } ] }'
 
-		var treemap = d3.layout.treemap().round(false).size([chartWidth, chartHeight]).sticky(true).padding([headerHeight + 1, 1, 1, 1]).value(function(d) {
+		var treemap = d3.layout.treemap().round(false).size([chartWidth, chartHeight]).sticky(true).value(function(d) {
 			return d.size;
 		});
 		//
@@ -137,22 +139,9 @@
 		var parentEnterTransition = parentCells.enter().append("g").attr("class", "cell parent").on("click", function(d) {
 			zoom(d);
 		});
-
-		parentEnterTransition.append("rect").attr("width", function(d) {
-			return Math.max(0.01, d.dx - 1);
-		}).attr("height", headerHeight).style("fill", headerColor);
-
+		parentEnterTransition.append("rect");
 		parentEnterTransition.append('text').attr("class", "label").style("fill", "white");
 
-		parentEnterTransition.select("rect").attr("width", function(d) {
-			return Math.max(0.01, d.dx - 1);
-		}).attr("height", headerHeight).style("fill", headerColor);
-
-		parentEnterTransition.select("text").attr("dx", function(d) {
-			return Math.max(0.01, d.dx / 2 - 1);
-		}).attr("dy", headerHeight - 5).style("fill", "white").text(function(d) {
-			return d.name;
-		});
 		// remove transition
 		parentCells.exit().remove();
 
@@ -164,44 +153,14 @@
 		var childEnterTransition = childrenCells.enter().append("g").attr("class", "cell child").on("click", function(d) {
 			zoom(node === d.parent ? root : d.parent);
 		});
-		childEnterTransition.append("rect").classed("background", true).style("fill", function(d) {
-			return color(d.value);
-
-		});
-		childEnterTransition.append('text').attr("class", "labelbody").attr("dx", function(d) {
-			return Math.max(0.01, d.dx / 2 - 1);
-		}).attr("dy", function(d) {
-			return Math.max(0.01, d.dy / 2 - 1);
-		}).text(function(d) {
-			return d.name + "(" + d.value + ")" + "-" + color(d.value);
-		});
-
-		childEnterTransition.select("rect").attr("width", function(d) {
-			return Math.max(0.01, d.dx - 1);
-		}).attr("height", function(d) {
-			return (d.dy - 1);
-		}).style("fill", function(d) {
-			return color(d.value);
-
-		});
-		childEnterTransition.select("text").attr("dx", function(d) {
-			return Math.max(0.01, d.dx / 2 - 1);
-		}).attr("dy", function(d) {
-			return Math.max(0.01, d.dy / 2 - 1);
-		}).text(function(d) {
-			return d.name + "(" + d.value + ")" + "-" + color(d.value);
-		});
+		
+		childEnterTransition.append("rect").classed("background", true);
+		childEnterTransition.append('text').attr("class", "labelbody");
+		
 		// exit transition
 		childrenCells.exit().remove();
 
 		zoom(node);
-
-		//and another one
-		function textHeight(d) {
-			var ky = chartHeight / d.dy;
-			yscale.domain([d.y, d.y + d.dy]);
-			return (ky * d.dy) / headerHeight;
-		}
 
 		function zoom(d) {
 			this.treemap.padding([headerHeight / (chartHeight / d.dy), 0, 0, 0]).nodes(d);
@@ -212,7 +171,7 @@
 
 			xscale.domain([d.x, d.x + d.dx]);
 			yscale.domain([d.y, d.y + d.dy]);
-
+			
 			if (node != level) {
 				chart.selectAll(".cell.child .foreignObject").style("display", "none");
 			}
@@ -222,7 +181,7 @@
 			}).each("start", function() {
 				d3.select(this).select(".labelbody").style("display", "none");
 			}).each("end", function(d) {
-				if (/*!i &&*/(level !== self.root)) {
+				if ((level !== self.root)) {
 					chart.selectAll(".cell.child").filter(function(d) {
 						return d.parent === self.node;
 						// only get the children for selected group
