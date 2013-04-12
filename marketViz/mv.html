@@ -139,6 +139,7 @@
 		var parentEnterTransition = parentCells.enter().append("g").attr("class", "cell parent").on("click", function(d) {
 			zoom(d);
 		});
+		
 		parentEnterTransition.append("rect");
 		parentEnterTransition.append('text').attr("class", "label").style("fill", "white");
 
