@@ -1,0 +1,23 @@
+.parent .label {
+	color: #FFFFFF;
+	padding-left: 2px;
+	padding-top: 2px;
+}
+
+.labelbody {
+	background: transparent;
+}
+
+.label {
+	padding: 2px;
+	white-space: pre;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+
+}
+
+.cell {
+	font-size: 11px;
+	cursor: pointer
+}
