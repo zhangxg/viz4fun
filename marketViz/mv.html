@@ -106,7 +106,32 @@
 		var xscale = d3.scale.linear().range([0, chartWidth]);
 		var yscale = d3.scale.linear().range([0, chartHeight]);
 		// var color = d3.scale.category10_ext();
-		var color = d3.scale.linear().domain([200, 10500]).range(["#7f9e07", "#c4181e"]);
+		//var color = d3.scale.linear().domain([200, 10500]).range(["#7f9e07", "#c4181e"]);
+		
+		
+		// change color to HSL by yanzq, no changes in other place
+		//
+		// 1 Less than 5400 are green,and others are red, 
+		// 2 Using quantize() to specific two main colors, "73" stands for green ,and "356" is red
+		//*****************begin****************************************** 
+		      
+		     var color=function(d){
+		     	  var hScale = d3.scale.quantize().domain([300, 10500]).range([73,356]);
+		     	  var sScale;
+		     	  var lScale;
+		     	if(d<5400){
+		     		 sScale = d3.scale.linear().domain([300,5400]).range([0.43,0.85]);
+		    		 lScale = d3.scale.linear().domain([300,5400]).range([0.81,0.35]);
+		         	return d3.hsl(hScale(d),sScale(d),lScale(d));
+		        }else{
+		     		sScale = d3.scale.linear().domain([5400,10500]).range([0.43,0.60]);
+		    		lScale = d3.scale.linear().domain([9800, 10500]).range([0.87,0.60]);
+		           return d3.hsl(hScale(d),sScale(d),lScale(d));
+		        }
+		     }
+	     
+	    //****************end*********************************************
+	    
 		var headerHeight = 20;
 		var headerColor = "#555555";
 		var transitionDuration = 500;
